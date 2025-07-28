@@ -125,6 +125,8 @@ function applyLanguage(lang) {
     revealed = "";         // сбрасываем на новый язык
   }
 
+  if(t.title) document.title = t.title;
+
   const switcher = document.getElementById('lang-switch');
   if (switcher) {
     switcher.setAttribute('data-active', lang);
