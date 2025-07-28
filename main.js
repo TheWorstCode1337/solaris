@@ -74,10 +74,13 @@ composer.addPass(bloomPass);
 let planetRevealOpacity = 0;
 let phase = 'appear';
 
-const target = "СОЛЯРИС";
-const possible = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯ1234567890!@#$%^&*";
-const textEl = document.getElementById("zagolok");
-let revealed = "";
+const possible = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*";
+const textEl = document.getElementById("zagolovok");
+
+let revealed = "";  // ❗ исправлено: let вместо const
+let target = "";    // ❗ исправлено: let вместо const
+let translations = {};
+let savedLang = localStorage.getItem('lang') || 'ru';
 
 function scrambleSymbol(targetChar, iterations = 9) {
   let count = 0;
@@ -104,6 +107,40 @@ async function revealWord() {
   }
 }
 
+fetch('lang.json')
+  .then(res => res.json())
+  .then(data => {
+    translations = data;
+    applyLanguage(savedLang);
+  });
+
+function applyLanguage(lang) {
+  const t = translations[lang];
+  if (!t) return;
+
+  const zagolovok = document.getElementById('zagolovok');
+  if (t.zagolovok) {
+    zagolovok.dataset.i18n = 'zagolovok';
+    target = t.zagolovok;    // теперь можно менять
+    revealed = "";         // сбрасываем на новый язык
+  }
+
+  const switcher = document.getElementById('lang-switch');
+  if (switcher) {
+    switcher.setAttribute('data-active', lang);
+  }
+}
+
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const lang = btn.dataset.lang;
+    if (lang !== savedLang) {
+      localStorage.setItem('lang', lang);
+      location.reload();
+    }
+  });
+});
+
 function animate() {
   requestAnimationFrame(animate);
 
@@ -126,7 +163,11 @@ function animate() {
       const overlay = document.getElementById('dark-overlay');
       overlay.style.opacity = '1';
 
-      setTimeout(revealWord, 2000);
+      setTimeout(() => {
+        if (target) {
+          revealWord();
+        }
+      }, 2000);
     }
   }
 
