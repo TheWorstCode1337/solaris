@@ -73,7 +73,9 @@ composer.addPass(bloomPass);
 
 let planetRevealOpacity = 0;
 let phase = 'appear';
-
+// Анимация смены языка
+let isRevealing = false;
+let scrambleInterval = null;
 const possible = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*";
 const textEl = document.getElementById("zagolovok");
 
@@ -81,17 +83,18 @@ let revealed = "";  // ❗ исправлено: let вместо const
 let target = "";    // ❗ исправлено: let вместо const
 let translations = {};
 let savedLang = localStorage.getItem('lang') || 'ru';
-
+//перебор символов
 function scrambleSymbol(targetChar, iterations = 9) {
   let count = 0;
   return new Promise(resolve => {
-    const interval = setInterval(() => {
+    if (scrambleInterval) clearInterval(scrambleInterval);
+    scrambleInterval = setInterval(() => {
       if (count < iterations) {
         const randChar = possible[Math.floor(Math.random() * possible.length)];
         textEl.textContent = revealed + randChar;
         count++;
       } else {
-        clearInterval(interval);
+        clearInterval(scrambleInterval);
         revealed += targetChar;
         textEl.textContent = revealed;
         resolve();
@@ -101,10 +104,13 @@ function scrambleSymbol(targetChar, iterations = 9) {
 }
 
 async function revealWord() {
+  if (isRevealing) return;
+  isRevealing = true;
   textEl.style.opacity = '1';
   for (let i = 0; i < target.length; i++) {
     await scrambleSymbol(target[i]);
   }
+  isRevealing = false
 }
 
 fetch('lang.json')
@@ -135,10 +141,13 @@ function applyLanguage(lang) {
 
 document.querySelectorAll('.lang-btn').forEach(btn => {
   btn.addEventListener('click', () => {
+    if(isRevealing) return;
     const lang = btn.dataset.lang;
     if (lang !== savedLang) {
       localStorage.setItem('lang', lang);
-      location.reload();
+      savedLang = lang;
+      applyLanguage(lang);
+      revealWord();
     }
   });
 });
