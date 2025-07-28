@@ -4,7 +4,6 @@ import { RenderPass } from 'RenderPass';
 import { UnrealBloomPass } from 'UnrealBloomPass';
 
 const canvas = document.getElementById('three-canvas');
-
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, canvas });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
@@ -15,11 +14,9 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.set(0, 0, 15);
 
-// Загрузка текстуры планеты
 const textureLoader = new THREE.TextureLoader();
 const planetTexture = textureLoader.load('planet.jpg');
 
-// Планета
 const sphereGeo = new THREE.SphereGeometry(5, 128, 128);
 const sphereMat = new THREE.MeshStandardMaterial({
   map: planetTexture,
@@ -32,12 +29,9 @@ const sphereMat = new THREE.MeshStandardMaterial({
 const planet = new THREE.Mesh(sphereGeo, sphereMat);
 scene.add(planet);
 
-// Атмосфера (ShaderMaterial)
 const atmGeo = new THREE.SphereGeometry(5.2, 64, 64);
 const atmMat = new THREE.ShaderMaterial({
-  uniforms: {
-    opacity: { value: 0 }
-  },
+  uniforms: { opacity: { value: 0 } },
   vertexShader: `
     varying vec3 vNormal;
     void main() {
@@ -60,7 +54,6 @@ const atmMat = new THREE.ShaderMaterial({
 const atmosphere = new THREE.Mesh(atmGeo, atmMat);
 scene.add(atmosphere);
 
-// Освещение
 const redEye = new THREE.DirectionalLight(0xff3333, 1.5);
 redEye.position.set(-200, 100, -300);
 scene.add(redEye);
@@ -73,15 +66,43 @@ const rimLight = new THREE.HemisphereLight(0xffccaa, 0x333333, 2.45);
 rimLight.position.set(0, 0, 20);
 scene.add(rimLight);
 
-// Постобработка: Bloom эффект
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1, 0.2);
 composer.addPass(bloomPass);
 
-// Анимационные состояния
 let planetRevealOpacity = 0;
-let phase = 'appear'; // appear -> shrink -> done
+let phase = 'appear';
+
+const target = "СОЛЯРИС";
+const possible = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯ1234567890!@#$%^&*";
+const textEl = document.getElementById("zagolok");
+let revealed = "";
+
+function scrambleSymbol(targetChar, iterations = 9) {
+  let count = 0;
+  return new Promise(resolve => {
+    const interval = setInterval(() => {
+      if (count < iterations) {
+        const randChar = possible[Math.floor(Math.random() * possible.length)];
+        textEl.textContent = revealed + randChar;
+        count++;
+      } else {
+        clearInterval(interval);
+        revealed += targetChar;
+        textEl.textContent = revealed;
+        resolve();
+      }
+    }, 30);
+  });
+}
+
+async function revealWord() {
+  textEl.style.opacity = '1';
+  for (let i = 0; i < target.length; i++) {
+    await scrambleSymbol(target[i]);
+  }
+}
 
 function animate() {
   requestAnimationFrame(animate);
@@ -102,9 +123,10 @@ function animate() {
     if (planet.scale.x < 0.89) {
       phase = 'done';
 
-      // Включаем CSS-затемнение
       const overlay = document.getElementById('dark-overlay');
       overlay.style.opacity = '1';
+
+      setTimeout(revealWord, 2000);
     }
   }
 
@@ -114,7 +136,6 @@ function animate() {
 
 animate();
 
-// Обработка ресайза
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
