@@ -164,11 +164,12 @@ function animate() {
       phase = 'shrink';
     }
   } else if (phase === 'shrink') {
-    planet.scale.multiplyScalar(0.98);
-    atmosphere.scale.multiplyScalar(0.98);
-    sphereMat.opacity *= 0.98;
+    planet.scale.lerp(new THREE.Vector3(0.89, 0.89, 0.89), 0.01);
+    atmosphere.scale.lerp(new THREE.Vector3(0.89, 0.89, 0.89), 0.01);
+    sphereMat.opacity = THREE.MathUtils.lerp(sphereMat.opacity, 0, 0.01);
 
-    if (planet.scale.x < 0.89) {
+
+    if (planet.scale.x < 0.95) {
       phase = 'done';
 
       const overlay = document.getElementById('dark-overlay');
