@@ -54,17 +54,14 @@ const atmMat = new THREE.ShaderMaterial({
 const atmosphere = new THREE.Mesh(atmGeo, atmMat);
 scene.add(atmosphere);
 
-const redEye = new THREE.DirectionalLight(0xff3333, 1.5);
-redEye.position.set(-200, 100, -300);
-scene.add(redEye);
+function addLight(light, pos) {
+  light.position.set(...pos);
+  scene.add(light);
+}
 
-const blueEye = new THREE.DirectionalLight(0x4444ff, 1.5);
-blueEye.position.set(200, 100, -250);
-scene.add(blueEye);
-
-const rimLight = new THREE.HemisphereLight(0xffccaa, 0x333333, 2.45);
-rimLight.position.set(0, 0, 20);
-scene.add(rimLight);
+addLight(new THREE.DirectionalLight(0xff3333, 1.5), [-200, 100, -300]);
+addLight(new THREE.DirectionalLight(0x4444ff, 1.5), [200, 100, -250]);
+addLight(new THREE.HemisphereLight(0xffccaa, 0x333333, 2.45), [0, 0, 20]);
 
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
@@ -79,8 +76,8 @@ let scrambleInterval = null;
 const possible = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*";
 const textEl = document.getElementById("zagolovok");
 
-let revealed = "";  // ❗ исправлено: let вместо const
-let target = "";    // ❗ исправлено: let вместо const
+let revealed = "";
+let target = "";
 let translations = {};
 let savedLang = localStorage.getItem('lang') || 'ru';
 //перебор символов
@@ -115,10 +112,7 @@ async function revealWord() {
 
 fetch('lang.json')
   .then(res => res.json())
-  .then(data => {
-    translations = data;
-    applyLanguage(savedLang);
-  });
+  .then(data => { translations = data; applyLanguage(savedLang); });
 
 function applyLanguage(lang) {
   const t = translations[lang];
@@ -127,8 +121,8 @@ function applyLanguage(lang) {
   const zagolovok = document.getElementById('zagolovok');
   if (t.zagolovok) {
     zagolovok.dataset.i18n = 'zagolovok';
-    target = t.zagolovok;    // теперь можно менять
-    revealed = "";         // сбрасываем на новый язык
+    target = t.zagolovok;
+    revealed = "";
   }
 
   if(t.title) document.title = t.title;
