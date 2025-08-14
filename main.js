@@ -126,10 +126,10 @@ function applyLanguage(lang) {
   document.querySelectorAll('.lang-btn').forEach(btn => {
     if(btn.dataset.lang === lang) {
       btn.disabled = true;
-      btn.classList.add(disabled);
+      btn.classList.add('disabled');
     } else {
       btn.disabled = false;
-      btn.classList.remove(disabled);
+      btn.classList.remove('disabled');
     }
   });
 }
