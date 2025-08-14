@@ -70,6 +70,10 @@ body {
 #lang-switch .lang-btn:hover {
   cursor: pointer;
 }
+#lang-switch .lang-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 #lang-switch .lang-indicator {
   position: absolute;
   top: 0;

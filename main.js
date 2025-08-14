@@ -4,28 +4,44 @@ import { RenderPass } from 'RenderPass';
 import { UnrealBloomPass } from 'UnrealBloomPass';
 import gsap from 'gsap';
 
+//constants
+const possible = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*";
+const savedLang = localStorage.getItem('lang') || 'ru';
+let translations = {}, revealed = "", target = "", isRevealing = false;
+
+//scene
 const canvas = document.getElementById('three-canvas');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, canvas });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.setClearColor(0x000000, 0);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.set(0, 0, 15);
 
+//light
+[
+  [new THREE.DirectionalLight(0xff3333, 2.0), [-200, 100, -300]],
+  [new THREE.DirectionalLight(0x4444ff, 1.5), [200, 100, -250]],
+  [new THREE.HemisphereLight(0xffccaa, 0x333333, 2.25), [0, 0, 20]]
+].forEach(([light, pos]) => {
+  light.position.set(...pos);
+  scene.add(light);
+});
+
+//planet and atmosphere
 const textureLoader = new THREE.TextureLoader();
 const planetTexture = textureLoader.load('planet.jpg');
 
-const sphereGeo = new THREE.SphereGeometry(5, 128, 128);
+const sphereGeo = new THREE.SphereGeometry(5, 64, 64);
 const sphereMat = new THREE.MeshStandardMaterial({
-  map: planetTexture,
-  roughness: 0.1,
-  metalness: 0.5,
-  color: new THREE.Color(0x0000FF),
-  opacity: 0,
-  transparent: true,
+    map: planetTexture,
+    roughness: 0.1, 
+    metalness: 0.5,
+    color: 0x0000FF,
+    opacity: 0,
+    transparent: true
 });
 const planet = new THREE.Mesh(sphereGeo, sphereMat);
 scene.add(planet);
@@ -55,53 +71,46 @@ const atmMat = new THREE.ShaderMaterial({
 const atmosphere = new THREE.Mesh(atmGeo, atmMat);
 scene.add(atmosphere);
 
-function addLight(light, pos) {
-  light.position.set(...pos);
-  scene.add(light);
-}
-
-[
-  [new THREE.DirectionalLight(0xff3333, 1.5), [-200, 100, -300]],
-  [new THREE.DirectionalLight(0x4444ff, 1.5), [200, 100, -250]],
-  [new THREE.HemisphereLight(0xffccaa, 0x333333, 2.25), [0, 0, 20]]
-].forEach(([light, pos]) => addLight(light, pos))
-
+//post-processing
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1, 0.2);
-composer.addPass(bloomPass);
+composer.addPass(new UnrealBloomPass(new THREE.Vector3(window.innerWidth, window.innerHeight), 1, 0.2));
 
-let planetRevealOpacity = 0;
-// Анимация смены языка
-let isRevealing = false;
-const possible = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*";
-const textEl = document.getElementById("zagolovok");
+//GSAP
+function startAnimation() {
+  gsap.timeline()
+    .to(sphereMat, {
+      opacity: 1,
+      duration: 2,
+      onUpdate: () => atmMat.uniforms.opacity.value = sphereMat.opacity * 0.6
+    })
+    .to([planet.scale, atmosphere.scale], { x: 0.89, y: 0.89, z: 0.89, duration: 2, ease: "power2.inOut" })
+    .to(sphereMat, {opacity: 0.55, duration: 2, ease: "power2.inOut"}, "<")
+    .to("#dark-overlay", {
+      opacity: 1, duration: 1,
+      onComplete: () => target && revealWord()
+    });
+}
 
-let revealed = "";
-let target = "";
-let translations = {};
-let savedLang = localStorage.getItem('lang') || 'ru';
-
-//перебор символов
+// scrumbling text
 async function scrambleSymbol(char, iterations = 9) {
-  for (let i = 0; i < iterations; i++){
+  const textEl = document.getElementById("zagolovok");
+  for (let i = 0; i < iterations; i++) {
     textEl.textContent = revealed + possible[Math.floor(Math.random() * possible.length)];
     await new Promise(r => setTimeout(r, 30));
   }
   revealed += char;
-  textEl.textContent = revealed;
+  textEl.textContent = target;
 }
 
 async function revealWord() {
-  if (isRevealing) return;
+  if(isRevealing) return;
   isRevealing = true;
-  textEl.style.opacity = '1';
-  for (let char of target) {
-    await scrambleSymbol(char);
-  }
-  isRevealing = false
+  for (let char of target) await scrambleSymbol(char);
+  isRevealing = false;
 }
 
+//switch language
 fetch('lang.json')
   .then(res => res.json())
   .then(data => { translations = data; applyLanguage(savedLang); });
@@ -109,74 +118,44 @@ fetch('lang.json')
 function applyLanguage(lang) {
   const t = translations[lang];
   if (!t) return;
-  const zagolovok = document.getElementById('zagolovok');
-  if (t.zagolovok) {
-    zagolovok.dataset.i18n = 'zagolovok';
-    target = t.zagolovok;
-    revealed = "";
-  }
-  if(t.title) document.title = t.title;
-  const switcher = document.getElementById('lang-switch');
-  if (switcher) {
-    switcher.setAttribute('data-active', lang);
-  }
-}
+  target = t.zagolovok || "";
+  revealed ="";
+  if (t.title) document.title = t.title;
+  document.getElementById('lang-switch')?.setAttribute('data-active', lang);
 
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    if(btn.dataset.lang === lang) {
+      btn.disabled = true;
+      btn.classList.add(disabled);
+    } else {
+      btn.disabled = false;
+      btn.classList.remove(disabled);
+    }
+  });
+}
 document.querySelectorAll('.lang-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    if(isRevealing) return;
-    const lang = btn.dataset.lang;
-    if (lang !== savedLang) {
-      localStorage.setItem('lang', lang);
-      savedLang = lang;
-      applyLanguage(lang);
+    if(!isRevealing && !btn.disabled) {
+      const newLang = btn.dataset.lang;
+      localStorage.setItem('lang', newLang);
+      applyLanguage(newLang);
       revealWord();
     }
   });
 });
 
-let phase = 'appear';
-const phases = {
-  appear() {
-    if (planetRevealOpacity < 1) {
-      planetRevealOpacity += 0.01;
-      sphereMat.opacity = planetRevealOpacity;
-      atmMat.uniforms.opacity.value = planetRevealOpacity * 0.6;
-    } else {
-      phase = 'shrink';
-    }
-  },
-  shrink() {
-    gsap.to([planet.scale, atmosphere.scale], { x: 0.89, y: 0.89, z: 0.89, duration: 2});
-    gsap.to(sphereMat, {opacity: 0.75, duration: 1.5});
-    if (planet.scale.x < 0.95) {
-      phase = 'done';
-      const overlay = document.getElementById('dark-overlay');
-      overlay.style.opacity = '1';
-      setTimeout(() => {
-        if (target) {
-          revealWord();
-        }
-      }, 2000);
-    }
-  }, 
-  done() {}
-}
-
+//render
 function animate() {
   requestAnimationFrame(animate);
-  phases[phase]?.();
-  planet.rotation.y += 0.0008;
+  planet.rotation.y += 0.0005;
   composer.render();
 }
-animate();
 
-function onResize() {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  camera.aspect = w / h;
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(w, h);
-  composer.setSize(w, h);
-}
-window.addEventListener('resize', onResize);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+});
+animate();
+startAnimation();

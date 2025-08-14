@@ -71,6 +71,11 @@ body {
     }
   }
 
+  .lang-btn.disabled{
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   .lang-indicator {
     position: absolute;
     top: 0;
