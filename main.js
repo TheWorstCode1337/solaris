@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { EffectComposer } from 'EffectComposer';
 import { RenderPass } from 'RenderPass';
 import { UnrealBloomPass } from 'UnrealBloomPass';
+import gsap from 'gsap';
 
 const canvas = document.getElementById('three-canvas');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, canvas });
@@ -59,9 +60,11 @@ function addLight(light, pos) {
   scene.add(light);
 }
 
-addLight(new THREE.DirectionalLight(0xff3333, 1.5), [-200, 100, -300]);
-addLight(new THREE.DirectionalLight(0x4444ff, 1.5), [200, 100, -250]);
-addLight(new THREE.HemisphereLight(0xffccaa, 0x333333, 2.45), [0, 0, 20]);
+[
+  [new THREE.DirectionalLight(0xff3333, 1.5), [-200, 100, -300]],
+  [new THREE.DirectionalLight(0x4444ff, 1.5), [200, 100, -250]],
+  [new THREE.HemisphereLight(0xffccaa, 0x333333, 2.25), [0, 0, 20]]
+].forEach(([light, pos]) => addLight(light, pos))
 
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
@@ -69,10 +72,8 @@ const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, windo
 composer.addPass(bloomPass);
 
 let planetRevealOpacity = 0;
-let phase = 'appear';
 // Анимация смены языка
 let isRevealing = false;
-let scrambleInterval = null;
 const possible = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*";
 const textEl = document.getElementById("zagolovok");
 
@@ -80,32 +81,23 @@ let revealed = "";
 let target = "";
 let translations = {};
 let savedLang = localStorage.getItem('lang') || 'ru';
+
 //перебор символов
-function scrambleSymbol(targetChar, iterations = 9) {
-  let count = 0;
-  return new Promise(resolve => {
-    if (scrambleInterval) clearInterval(scrambleInterval);
-    scrambleInterval = setInterval(() => {
-      if (count < iterations) {
-        const randChar = possible[Math.floor(Math.random() * possible.length)];
-        textEl.textContent = revealed + randChar;
-        count++;
-      } else {
-        clearInterval(scrambleInterval);
-        revealed += targetChar;
-        textEl.textContent = revealed;
-        resolve();
-      }
-    }, 30);
-  });
+async function scrambleSymbol(char, iterations = 9) {
+  for (let i = 0; i < iterations; i++){
+    textEl.textContent = revealed + possible[Math.floor(Math.random() * possible.length)];
+    await new Promise(r => setTimeout(r, 30));
+  }
+  revealed += char;
+  textEl.textContent = revealed;
 }
 
 async function revealWord() {
   if (isRevealing) return;
   isRevealing = true;
   textEl.style.opacity = '1';
-  for (let i = 0; i < target.length; i++) {
-    await scrambleSymbol(target[i]);
+  for (let char of target) {
+    await scrambleSymbol(char);
   }
   isRevealing = false
 }
@@ -117,16 +109,13 @@ fetch('lang.json')
 function applyLanguage(lang) {
   const t = translations[lang];
   if (!t) return;
-
   const zagolovok = document.getElementById('zagolovok');
   if (t.zagolovok) {
     zagolovok.dataset.i18n = 'zagolovok';
     target = t.zagolovok;
     revealed = "";
   }
-
   if(t.title) document.title = t.title;
-
   const switcher = document.getElementById('lang-switch');
   if (switcher) {
     switcher.setAttribute('data-active', lang);
@@ -146,10 +135,9 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
   });
 });
 
-function animate() {
-  requestAnimationFrame(animate);
-
-  if (phase === 'appear') {
+let phase = 'appear';
+const phases = {
+  appear() {
     if (planetRevealOpacity < 1) {
       planetRevealOpacity += 0.01;
       sphereMat.opacity = planetRevealOpacity;
@@ -157,35 +145,38 @@ function animate() {
     } else {
       phase = 'shrink';
     }
-  } else if (phase === 'shrink') {
-    planet.scale.lerp(new THREE.Vector3(0.89, 0.89, 0.89), 0.01);
-    atmosphere.scale.lerp(new THREE.Vector3(0.89, 0.89, 0.89), 0.01);
-    sphereMat.opacity = THREE.MathUtils.lerp(sphereMat.opacity, 0, 0.01);
-
-
+  },
+  shrink() {
+    gsap.to([planet.scale, atmosphere.scale], { x: 0.89, y: 0.89, z: 0.89, duration: 2});
+    gsap.to(sphereMat, {opacity: 0.75, duration: 1.5});
     if (planet.scale.x < 0.95) {
       phase = 'done';
-
       const overlay = document.getElementById('dark-overlay');
       overlay.style.opacity = '1';
-
       setTimeout(() => {
         if (target) {
           revealWord();
         }
       }, 2000);
     }
-  }
+  }, 
+  done() {}
+}
 
+function animate() {
+  requestAnimationFrame(animate);
+  phases[phase]?.();
   planet.rotation.y += 0.0008;
   composer.render();
 }
-
 animate();
 
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+function onResize() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  composer.setSize(window.innerWidth, window.innerHeight);
-});
+  renderer.setSize(w, h);
+  composer.setSize(w, h);
+}
+window.addEventListener('resize', onResize);
