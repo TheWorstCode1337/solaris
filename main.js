@@ -123,6 +123,11 @@ fetch('lang.json')
 
 function applyLanguage(lang) {
   const t = translations[lang];
+  const headerId = document.getElementById("header");
+  const pheaderId = document.getElementById("pheader");
+  if (headerId) headerId.textContent = "";
+  if (pheaderId) pheaderId.textContent = "";
+
   if (!t) return;
   if (t.title) document.title = t.title;
 
