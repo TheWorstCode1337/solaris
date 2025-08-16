@@ -93,20 +93,26 @@ function startAnimation() {
 }
 
 // scrumbling text
-async function scrambleSymbol(char, iterations = 9) {
-  const textEl = document.getElementById("zagolovok");
+async function scrambleSymbol(char, elementId, currentText, iterations = 7) {
+  const textEl = document.getElementById(elementId);
   for (let i = 0; i < iterations; i++) {
-    textEl.textContent = revealed + possible[Math.floor(Math.random() * possible.length)];
+    textEl.textContent = currentText + possible[Math.floor(Math.random() * possible.length)];
     await new Promise(r => setTimeout(r, 30));
   }
-  revealed += char;
-  textEl.textContent = target;
+  return currentText + char;
 }
 
-async function revealWord() {
-  if(isRevealing) return;
+async function revealWord(text, elementId, iterations) {
+  const textEl = document.getElementById(elementId);
+  if (!textEl) return;
+
   isRevealing = true;
-  for (let char of target) await scrambleSymbol(char);
+  let revealedLocal = "";
+
+  for (let char of text) {
+    revealedLocal = await scrambleSymbol(char, elementId, revealedLocal, iterations);
+    textEl.textContent = revealedLocal;
+  }
   isRevealing = false;
 }
 
@@ -118,9 +124,14 @@ fetch('lang.json')
 function applyLanguage(lang) {
   const t = translations[lang];
   if (!t) return;
-  target = t.zagolovok || "";
-  revealed ="";
   if (t.title) document.title = t.title;
+
+  if(t.header){
+    revealWord(t.header, "header", 7).then(() => {
+      if (t.pheader) revealWord(t.pheader, "pheader", 3);
+    });
+  }
+
   document.getElementById('lang-switch')?.setAttribute('data-active', lang);
 
   document.querySelectorAll('.lang-btn').forEach(btn => {
@@ -139,7 +150,6 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
       const newLang = btn.dataset.lang;
       localStorage.setItem('lang', newLang);
       applyLanguage(newLang);
-      revealWord();
     }
   });
 });

@@ -1,10 +1,12 @@
 {
     "ru": {
         "title": "Солярис",
-        "zagolovok": "СОЛЯРИС"
+        "header": "СОЛЯРИС",
+        "pheader": "Тупой океан... или разум выше человеческого?"
     },
     "en": {
         "title": "Solaris",
-        "zagolovok": "SOLARIS"
+        "header": "SOLARIS",
+        "pheader": "A foolish ocean... or an intelligence beyond mankind?"
     }
 }
