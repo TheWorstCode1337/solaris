@@ -41,7 +41,6 @@ body {
   position: relative;
   z-index: 2;
   color: white;
-  font-size: 25px;
   text-align: center;
   vertical-align: middle;
   margin-top: 1%;
@@ -100,4 +99,10 @@ body {
 }
 #lang-switch[data-active=en] .lang-indicator {
   transform: translateX(100%);
+}
+#lang-switch[data-active=en] ~ #pheader {
+  font-size: 23.89px;
+}
+#lang-switch[data-active=ru] ~ #pheader {
+  font-size: 26px;
 }/*# sourceMappingURL=style.css.map */

@@ -7,7 +7,7 @@ import gsap from 'gsap';
 //constants
 const possible = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*";
 const savedLang = localStorage.getItem('lang') || 'ru';
-let translations = {}, revealed = "", target = "", isRevealing = false;
+let translations = {}, isRevealing = false;
 
 //scene
 const canvas = document.getElementById('three-canvas');
@@ -32,8 +32,7 @@ camera.position.set(0, 0, 15);
 
 //planet and atmosphere
 const textureLoader = new THREE.TextureLoader();
-const planetTexture = textureLoader.load('planet.jpg');
-
+const planetTexture = textureLoader.load('/image/planet.jpg');
 const sphereGeo = new THREE.SphereGeometry(5, 64, 64);
 const sphereMat = new THREE.MeshStandardMaterial({
     map: planetTexture,
@@ -88,7 +87,7 @@ function startAnimation() {
     .to(sphereMat, {opacity: 0.55, duration: 2, ease: "power2.inOut"}, "<")
     .to("#dark-overlay", {
       opacity: 1, duration: 1,
-      onComplete: () => target && revealWord()
+      onComplete: () => { if(pendingLang) revealLanguage(pendingLang); }
     });
 }
 
@@ -105,50 +104,35 @@ async function scrambleSymbol(char, elementId, currentText, iterations = 7) {
 async function revealWord(text, elementId, iterations) {
   const textEl = document.getElementById(elementId);
   if (!textEl) return;
-
   isRevealing = true;
   let revealedLocal = "";
-
   for (let char of text) {
     revealedLocal = await scrambleSymbol(char, elementId, revealedLocal, iterations);
     textEl.textContent = revealedLocal;
   }
   isRevealing = false;
 }
-
+let pendingLang = savedLang;
 //switch language
 fetch('lang.json')
   .then(res => res.json())
-  .then(data => { translations = data; applyLanguage(savedLang); });
+  .then(data => { translations = data; applyLanguage(savedLang, false); });
 
-function applyLanguage(lang) {
+function applyLanguage(lang, doReveal = true) {
   const t = translations[lang];
-  const headerId = document.getElementById("header");
-  const pheaderId = document.getElementById("pheader");
-  if (headerId) headerId.textContent = "";
-  if (pheaderId) pheaderId.textContent = "";
-
+  pendingLang = lang;
+  document.getElementById("header").textContent = "";
+  document.getElementById("pheader").textContent = "";
   if (!t) return;
   if (t.title) document.title = t.title;
-
-  if(t.header){
-    revealWord(t.header, "header", 7).then(() => {
-      if (t.pheader) revealWord(t.pheader, "pheader", 3);
-    });
-  }
-
+  if(doReveal) revealLanguage(lang);
   document.getElementById('lang-switch')?.setAttribute('data-active', lang);
-
   document.querySelectorAll('.lang-btn').forEach(btn => {
-    if(btn.dataset.lang === lang) {
-      btn.disabled = true;
-      btn.classList.add('disabled');
-    } else {
-      btn.disabled = false;
-      btn.classList.remove('disabled');
-    }
+    btn.disabled = btn.dataset.lang === lang;
+    btn.classList.toggle('disabled', btn.disabled);
   });
 }
+
 document.querySelectorAll('.lang-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     if(!isRevealing && !btn.disabled) {
@@ -158,6 +142,17 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
     }
   });
 });
+
+//showing lang
+function revealLanguage(lang) {
+  const t = translations[lang];
+  if(!t) return;
+  if(t.header){
+    revealWord(t.header, "header", 7).then(() => {
+      if (t.pheader) revealWord(t.pheader, "pheader", 3);
+    });
+  }
+}
 
 //render
 function animate() {
