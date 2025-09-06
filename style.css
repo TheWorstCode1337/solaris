@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Ubuntu+Sans+Mono:ital,wght@0,400..700;1,400..700&display=swap");
 body {
   margin: 0;
@@ -27,23 +26,26 @@ body {
   transition: opacity 1.5s ease-in-out;
 }
 
-#header {
-  position: relative;
-  z-index: 2;
-  color: white;
-  font-size: 100px;
+.text-wrapper {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   text-align: center;
-  vertical-align: middle;
-  margin-top: 20%;
+  z-index: 2;
+  pointer-events: none;
 }
-
-#pheader {
-  position: relative;
-  z-index: 2;
+.text-wrapper #header {
+  font-size: clamp(32px, 8vw, 100px);
   color: white;
-  text-align: center;
-  vertical-align: middle;
-  margin-top: 1%;
+  margin-bottom: 1rem;
+}
+.text-wrapper #pheader {
+  font-size: clamp(16px, 3vw, 30px);
+  color: white;
 }
 
 #lang-switch {
@@ -54,12 +56,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 100px;
-  height: 40px;
   background: #ccc;
   border-radius: 8px;
   font-family: "Ubuntu Mono", monospace;
-  font-size: 16px;
+  font-size: clamp(12px, 2vw, 16px);
+  width: clamp(80px, 20vw, 120px);
+  height: clamp(32px, 6vw, 40px);
   font-weight: bold;
   -webkit-user-select: none;
      -moz-user-select: none;
@@ -97,12 +99,12 @@ body {
 #lang-switch[data-active=ru] .lang-indicator {
   transform: translateX(0%);
 }
+#lang-switch[data-active=ru] ~ #pheader {
+  font-size: 30px;
+}
 #lang-switch[data-active=en] .lang-indicator {
   transform: translateX(100%);
 }
 #lang-switch[data-active=en] ~ #pheader {
   font-size: 23.89px;
-}
-#lang-switch[data-active=ru] ~ #pheader {
-  font-size: 26px;
 }/*# sourceMappingURL=style.css.map */

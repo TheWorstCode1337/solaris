@@ -13,7 +13,7 @@ let translations = {}, isRevealing = false;
 const canvas = document.getElementById('three-canvas');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, canvas });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setClearColor(0x000000, 0);
 
 const scene = new THREE.Scene();
@@ -33,7 +33,7 @@ camera.position.set(0, 0, 15);
 //planet and atmosphere
 const textureLoader = new THREE.TextureLoader();
 const planetTexture = textureLoader.load('/image/planet.jpg');
-const sphereGeo = new THREE.SphereGeometry(5, 64, 64);
+const sphereGeo = new THREE.SphereGeometry(5, window.innerWidth < 768 ? 32 : 64, window.innerWidth < 768 ? 32 : 64);
 const sphereMat = new THREE.MeshStandardMaterial({
     map: planetTexture,
     roughness: 0.1, 
@@ -71,9 +71,10 @@ const atmosphere = new THREE.Mesh(atmGeo, atmMat);
 scene.add(atmosphere);
 
 //post-processing
+const bloomStrenght = window.innerWidth < 768 ? 0.6 : 1.0;
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-composer.addPass(new UnrealBloomPass(new THREE.Vector3(window.innerWidth, window.innerHeight), 1, 0.2));
+composer.addPass(new UnrealBloomPass(new THREE.Vector3(window.innerWidth, window.innerHeight), bloomStrenght, 0.2));
 
 //GSAP
 function startAnimation() {
@@ -161,11 +162,16 @@ function animate() {
   composer.render();
 }
 
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+function resizeBlya(){
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  camera.aspect = w/h;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  composer.setSize(window.innerWidth, window.innerHeight);
-});
+  renderer.setSize(w, h);
+  composer.setSize(w, h);
+}
+
+window.addEventListener('resize', resizeBlya);
 animate();
 startAnimation();
+resizeBlya();
