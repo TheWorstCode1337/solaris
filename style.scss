@@ -3,15 +3,20 @@
 body {
   margin: 0;
   overflow-x: hidden;
+  overflow-y: scroll;
   font-family: "Ubuntu Sans Mono", monospace;
   background: black;
+
+  &::-webkit-scrollbar{
+    display: none;
+  }
 }
 
 #three-canvas {
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 1;
+  z-index: 0;
 }
 
 #dark-overlay {
@@ -21,14 +26,14 @@ body {
   width: 100vw;
   height: 100vh;
   background: rgba(0, 0, 0, 0.3);
-  z-index: 2;
+  z-index: 1;
   pointer-events: none;
   opacity: 0;
   transition: opacity 1.5s ease-in-out;
 }
 
 .text-wrapper {
-position: absolute;
+  position: absolute;
   width: 100vw;
   height: 100vh;
   display: flex;
@@ -36,7 +41,7 @@ position: absolute;
   justify-content: center; 
   align-items: center;     
   text-align: center;
-  z-index: 2;
+  z-index: 1;
   pointer-events: none;
   #header {
     font-size: clamp(32px, 8vw, 100px);
@@ -53,7 +58,7 @@ position: absolute;
   position: absolute;
   top: 20px;
   right: 20px;
-  z-index: 3;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -95,7 +100,7 @@ position: absolute;
     height: 100%;
     background: white;
     border-radius: 8px;
-    z-index: 1;
+    z-index: 0;
     transition: transform 0.4s ease;
   }
 
@@ -118,4 +123,8 @@ position: absolute;
       font-size: 23.89px;
     }
   }
+}
+
+.test-scroll{
+  height: 300vh;
 }

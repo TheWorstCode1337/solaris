@@ -2,15 +2,19 @@
 body {
   margin: 0;
   overflow-x: hidden;
+  overflow-y: scroll;
   font-family: "Ubuntu Sans Mono", monospace;
   background: black;
+}
+body::-webkit-scrollbar {
+  display: none;
 }
 
 #three-canvas {
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 1;
+  z-index: 0;
 }
 
 #dark-overlay {
@@ -20,7 +24,7 @@ body {
   width: 100vw;
   height: 100vh;
   background: rgba(0, 0, 0, 0.3);
-  z-index: 2;
+  z-index: 1;
   pointer-events: none;
   opacity: 0;
   transition: opacity 1.5s ease-in-out;
@@ -35,7 +39,7 @@ body {
   justify-content: center;
   align-items: center;
   text-align: center;
-  z-index: 2;
+  z-index: 1;
   pointer-events: none;
 }
 .text-wrapper #header {
@@ -52,7 +56,7 @@ body {
   position: absolute;
   top: 20px;
   right: 20px;
-  z-index: 3;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -93,7 +97,7 @@ body {
   height: 100%;
   background: white;
   border-radius: 8px;
-  z-index: 1;
+  z-index: 0;
   transition: transform 0.4s ease;
 }
 #lang-switch[data-active=ru] .lang-indicator {
@@ -107,4 +111,8 @@ body {
 }
 #lang-switch[data-active=en] ~ #pheader {
   font-size: 23.89px;
+}
+
+.test-scroll {
+  height: 300vh;
 }/*# sourceMappingURL=style.css.map */
