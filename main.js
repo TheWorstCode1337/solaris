@@ -162,6 +162,7 @@ function animate() {
   composer.render();
 }
 
+
 function resizeBlya(){
   const w = window.innerWidth;
   const h = window.innerHeight;
